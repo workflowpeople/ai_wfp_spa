@@ -1,0 +1,15 @@
+{
+  "name": "wfp-runner",
+  "version": "0.1.0",
+  "description": "Browser-only runner for .wfp workflow files. No server, no cloud, no install.",
+  "type": "module",
+  "scripts": {
+    "build": "bun run build.ts",
+    "dev": "bun run build.ts --watch",
+    "serve": "bun run serve.ts"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "typescript": "^5.4.0"
+  }
+}

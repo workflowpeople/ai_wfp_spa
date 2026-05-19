@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>WFP Runner</title>
+<link rel="stylesheet" href="./style.css" />
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-left">
+    <strong class="brand">WFP Runner</strong>
+    <span id="workspace-name" class="workspace-name">No file open</span>
+    <span id="file-name" class="file-name"></span>
+  </div>
+  <div class="topbar-right">
+    <button id="btn-open">Open .wfp</button>
+    <button id="btn-save" disabled>Save</button>
+    <button id="btn-new-workflow" disabled>New Workflow</button>
+    <button id="btn-settings">Settings</button>
+  </div>
+</header>
+
+<main class="layout">
+  <aside class="sidebar">
+    <section>
+      <h3>Workflows</h3>
+      <ul id="workflow-list" class="list"><li class="empty">Open a .wfp file to begin.</li></ul>
+    </section>
+    <section>
+      <h3>Data Files</h3>
+      <ul id="data-list" class="list"></ul>
+    </section>
+    <section>
+      <h3>Knowledge Packs</h3>
+      <ul id="knowledge-list" class="list"></ul>
+    </section>
+  </aside>
+
+  <section class="output">
+    <div class="output-header">
+      <h3 id="output-title">Output</h3>
+      <button id="btn-clear-log" class="link">Clear log</button>
+    </div>
+    <div id="log" class="log">
+      <div class="placeholder">Workflow output will appear here.</div>
+    </div>
+  </section>
+</main>
+
+<!-- Modify with AI modal -->
+<div id="modify-modal" class="modal hidden">
+  <div class="modal-panel modal-panel-wide">
+    <h2 id="modify-modal-title">Modify workflow</h2>
+    <p class="muted">
+      1) Describe what you want changed. 2) Click <b>Copy Prompt</b>, paste into Claude / Gemini / ChatGPT.
+      3) Paste their response back and click <b>Apply</b>. The response must be a JSON block — instructions are included in the prompt.
+    </p>
+    <div id="modify-shared-warning" class="shared-warning hidden"></div>
+    <label>What would you like to change?
+      <textarea id="modify-request" class="text-area-short" spellcheck="false" placeholder="e.g. Add a column to the balance sheet showing % of total assets"></textarea>
+    </label>
+    <div class="modal-actions" style="margin-top: 8px; margin-bottom: 8px;">
+      <button id="btn-modify-copy">Copy Prompt</button>
+      <span id="modify-copy-status" class="muted" style="align-self: center;"></span>
+    </div>
+    <label>Paste the AI's response
+      <textarea id="modify-response" class="data-textarea" spellcheck="false" placeholder="Paste the AI response (entire ```json { ... } ``` block)"></textarea>
+    </label>
+    <div class="modal-actions">
+      <span id="modify-apply-status" class="muted" style="align-self: center;"></span>
+      <span style="flex:1"></span>
+      <button id="btn-modify-cancel" class="secondary">Close</button>
+      <button id="btn-modify-apply">Apply</button>
+      <button id="btn-modify-save">Save to Disk</button>
+    </div>
+  </div>
+</div>
+
+<!-- Tool editor modal -->
+<div id="tool-modal" class="modal hidden">
+  <div class="modal-panel modal-panel-wide">
+    <h2 id="tool-modal-title">Edit tool</h2>
+    <label>Name
+      <input id="tool-modal-name" type="text" />
+    </label>
+    <label>Description
+      <textarea id="tool-modal-description" class="text-area-short" spellcheck="false"></textarea>
+    </label>
+    <label>Code (JavaScript function body)
+      <textarea id="tool-modal-code" class="data-textarea" spellcheck="false"></textarea>
+    </label>
+    <p class="muted ai-hint">
+      Use AI to edit this tool: click <b>Copy Prompt for AI</b>, paste into Claude / Gemini / ChatGPT,
+      add your change request, then paste their updated <b>Description</b> and <b>Code</b> back into the fields above.
+    </p>
+    <div class="modal-actions">
+      <button id="btn-tool-delete" class="secondary danger">Delete</button>
+      <button id="btn-tool-copy-prompt" class="secondary">Copy Prompt for AI</button>
+      <span id="tool-copy-status" class="muted" style="align-self: center;"></span>
+      <span style="flex:1"></span>
+      <button id="btn-tool-cancel" class="secondary">Cancel</button>
+      <button id="btn-tool-save">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Data editor modal -->
+<div id="data-modal" class="modal hidden">
+  <div class="modal-panel modal-panel-wide">
+    <h2 id="data-modal-title">Edit data file</h2>
+    <p class="muted" id="data-modal-meta"></p>
+    <textarea id="data-modal-textarea" class="data-textarea" spellcheck="false"></textarea>
+    <div class="modal-actions">
+      <button id="btn-data-replace" class="secondary">Replace from file...</button>
+      <span style="flex:1"></span>
+      <button id="btn-data-cancel" class="secondary">Cancel</button>
+      <button id="btn-data-save">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Settings modal -->
+<div id="settings-modal" class="modal hidden">
+  <div class="modal-panel">
+    <h2>LLM Settings</h2>
+    <p class="muted">Stored in your browser's localStorage. Never sent to anyone except the provider URL below.</p>
+    <label>Base URL
+      <input id="cfg-base-url" type="text" placeholder="https://api.openai.com/v1" />
+    </label>
+    <label>API Key
+      <input id="cfg-api-key" type="password" placeholder="sk-..." />
+    </label>
+    <label>Model
+      <input id="cfg-model" type="text" placeholder="gpt-4o-mini" />
+    </label>
+    <label>Provider label (optional)
+      <input id="cfg-provider-label" type="text" placeholder="OpenAI" />
+    </label>
+    <div class="modal-actions">
+      <button id="btn-cfg-clear" class="secondary">Clear</button>
+      <button id="btn-cfg-cancel" class="secondary">Cancel</button>
+      <button id="btn-cfg-save">Save</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script type="module" src="./main.ts"></script>
+</body>
+</html>
