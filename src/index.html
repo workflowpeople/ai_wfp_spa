@@ -121,6 +121,24 @@
   </div>
 </div>
 
+<!-- Pause-for-input modal -->
+<div id="pause-modal" class="modal hidden">
+  <div class="modal-panel">
+    <h2>Workflow paused — input needed</h2>
+    <div id="pause-prompt" class="muted"></div>
+    <div id="pause-form-fields"></div>
+    <label id="pause-text-wrap">Your response
+      <textarea id="pause-input" class="text-area-short" spellcheck="false" placeholder="Type your response..."></textarea>
+    </label>
+    <div id="pause-validation" class="muted" style="color:#b91c1c;"></div>
+    <div class="modal-actions">
+      <span style="flex:1"></span>
+      <button id="btn-pause-cancel" class="secondary">Cancel</button>
+      <button id="btn-pause-continue">Continue</button>
+    </div>
+  </div>
+</div>
+
 <!-- Settings modal -->
 <div id="settings-modal" class="modal hidden">
   <div class="modal-panel">

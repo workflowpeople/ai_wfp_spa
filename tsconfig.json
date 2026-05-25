@@ -12,7 +12,20 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": true,
-    "types": ["bun-types"]
+    "types": ["bun-types"],
+    "baseUrl": ".",
+    "paths": {
+      "wfp-format": ["../wfp_format/index.ts"],
+      "wfp-format/*": ["../wfp_format/*"],
+      "wfp-api": ["../wfp_api/index.ts"],
+      "wfp-api/*": ["../wfp_api/*"],
+      "wfp-builtins": ["../wfp_builtins/index.ts"],
+      "wfp-builtins/*": ["../wfp_builtins/*"],
+      "wfp-core": ["../wfp_core/index.ts"],
+      "wfp-core/*": ["../wfp_core/*"],
+      "wfp-llm-context": ["../wfp_llm_context/index.ts"],
+      "wfp-llm-context/*": ["../wfp_llm_context/*"]
+    }
   },
   "include": ["src/**/*", "build.ts", "serve.ts"]
 }

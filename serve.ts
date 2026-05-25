@@ -8,13 +8,18 @@ const port = Number(process.env.PORT || 5173);
 
 Bun.serve({
   port,
-  fetch(req) {
+  async fetch(req) {
     const url = new URL(req.url);
     let p = decodeURIComponent(url.pathname);
     if (p === "/") p = "/index.html";
+    if (p === "/favicon.ico") return new Response(null, { status: 204 });
     const filePath = path.join(distDir, p);
     if (!filePath.startsWith(distDir)) return new Response("Not found", { status: 404 });
-    return new Response(file(filePath));
+    const f = file(filePath);
+    if (!(await f.exists())) return new Response("Not found", { status: 404 });
+    return new Response(f, {
+      headers: { "Cache-Control": "no-store" },
+    });
   },
 });
 

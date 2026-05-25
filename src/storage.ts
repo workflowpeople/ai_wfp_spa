@@ -2,6 +2,7 @@
 // Save-to-disk requires a Chromium-based browser. Other browsers fall back to a download.
 
 import type { LlmConfig, WfpFile } from "./types";
+import { WFP_FORMAT_VERSION } from "./types";
 
 const LLM_SETTINGS_KEY = "wfp-runner.llm-settings.v1";
 
@@ -15,6 +16,20 @@ export function fsAccessSupported(): boolean {
   return typeof (window as any).showOpenFilePicker === "function";
 }
 
+// Parse + warn if the file's format_version is missing or unexpected.
+// The runner still tries to load — most fields are forgiving — but the
+// user gets a console hint when the file was written by a different version.
+function parseAndCheck(text: string, fileName: string): WfpFile {
+  const file = JSON.parse(text) as WfpFile;
+  const v = file?.metadata?.format_version;
+  if (!v) {
+    console.warn(`[wfp-runner] ${fileName}: missing metadata.format_version. Expected "${WFP_FORMAT_VERSION}".`);
+  } else if (v !== WFP_FORMAT_VERSION) {
+    console.warn(`[wfp-runner] ${fileName}: format_version "${v}" — this runner targets "${WFP_FORMAT_VERSION}".`);
+  }
+  return file;
+}
+
 export async function openWfp(): Promise<OpenedFile | null> {
   if (fsAccessSupported()) {
     const [handle] = await (window as any).showOpenFilePicker({
@@ -23,7 +38,7 @@ export async function openWfp(): Promise<OpenedFile | null> {
     });
     const file = await handle.getFile();
     const text = await file.text();
-    return { file: JSON.parse(text), fileName: file.name, handle };
+    return { file: parseAndCheck(text, file.name), fileName: file.name, handle };
   }
   // Fallback: <input type="file">
   return new Promise((resolve) => {
@@ -34,7 +49,7 @@ export async function openWfp(): Promise<OpenedFile | null> {
       const f = input.files?.[0];
       if (!f) return resolve(null);
       const text = await f.text();
-      resolve({ file: JSON.parse(text), fileName: f.name, handle: null });
+      resolve({ file: parseAndCheck(text, f.name), fileName: f.name, handle: null });
     };
     input.click();
   });

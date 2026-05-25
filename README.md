@@ -21,7 +21,7 @@ Double-click. Works in any modern Chromium-based browser (Chrome, Edge, Brave, A
 ### Option B — local dev server
 
 ```bash
-bun run build      # produces dist/wfp-runner.js (single IIFE bundle, ~30 KB)
+bun run build      # produces dist/index.html (single self-contained file, ~85 KB)
 bun run serve      # serves dist/ at http://localhost:5173
 ```
 
@@ -29,7 +29,7 @@ Open `http://localhost:5173/`.
 
 ### Option C — host it
 
-Deploy `dist/` to any static host (GitHub Pages, Cloudflare Pages, Netlify, S3 + CloudFront). Three files total: `index.html`, `wfp-runner.js`, `style.css`. Plus one external dependency loaded via CDN (marked.js, for markdown rendering — falls back to `<pre>` if blocked).
+Deploy `dist/` to any static host (GitHub Pages, Cloudflare Pages, Netlify, S3 + CloudFront). One file total: `index.html` — JS, CSS, and the markdown renderer are all inlined. Works offline from `file://`.
 
 ## What it does
 
@@ -42,7 +42,7 @@ Deploy `dist/` to any static host (GitHub Pages, Cloudflare Pages, Netlify, S3 +
 | **Sidebar — Data Files** | One row per user data file with `[Edit]`. Click Edit to view/modify the raw content (CSV / JSON / text). Includes a **Replace from file...** picker. CSV `row_count` and `columns` recompute on save. |
 | **Sidebar — Knowledge Packs** | Read-only list (editor coming). |
 | **Settings** | LLM provider config: base URL, API key, model. Stored in `localStorage`. |
-| **Run** | Executes a workflow's nodes in `step_order`. Streams output to the log pane. `download_data` nodes produce a "Report ready" entry with **Download** and **Open in new tab** buttons. Markdown is rendered. |
+| **Run** | Executes a workflow's nodes in `step_order`. Streams output to the log pane. `chat_download` nodes produce a "Report ready" entry with **Download** and **Open in new tab** buttons. Markdown is rendered. |
 | **Modify with AI** | Per-workflow. Type a change request, click **Copy Prompt**, paste into your chat LLM, paste their JSON response back, click **Apply**. The prompt is scoped to just that workflow + the custom tools it references (not the whole workspace). Warns if any of those tools are shared with other workflows. |
 
 ## How "Modify with AI" works
@@ -51,18 +51,18 @@ Deploy `dist/` to any static host (GitHub Pages, Cloudflare Pages, Netlify, S3 +
 2. Type what you want changed.
 3. Click **Copy Prompt**. The clipboard now contains:
    - The full workflow JSON (one workflow only)
-   - The custom tools referenced by that workflow's nodes (only those — not the whole `app_custom_tools`)
+   - The custom tools referenced by that workflow's nodes (only those — not the whole `tools` array)
    - All knowledge packs (small, often referenced via `api.getKnowledge(name)`)
-   - All `user_data` files, sampled to the first 3 rows of each CSV
+   - All `data` files, sampled to the first 3 rows of each CSV
    - The complete `api.*` reference, including the canonical node schema
    - Your change request
    - Strict output instructions: return a single ` ```json { ... } ``` ` block
 4. Paste into Claude, Gemini, ChatGPT, etc.
 5. Paste their response into the bottom textarea.
-6. Click **Apply** — the parser extracts the JSON block (auto-strips the fence), matches each returned `app_workflows` / `app_custom_tools` / `app_knowledge_packs` entry to existing items by primary key (`workflow_id` / `tool_id` / `name`), and merges. New items (unmatched IDs) are added.
+6. Click **Apply** — the parser extracts the JSON block (auto-strips the fence), matches each returned `workflows` / `tools` / `knowledge` entry to existing items by primary key (`id` / `tool_id` / `name`), and merges. New items (unmatched IDs) are added.
 7. Click **Save to Disk** (in the same modal) to write the updated `.wfp` back to your file.
 
-The parser is lenient — if a returned `nodes` field is an array instead of a JSON-encoded string, it gets stringified. If the LLM forgets the ` ```json ` fence, the parser finds the first `{...}` block.
+The parser is lenient — if a returned `nodes` field is a JSON-encoded string (legacy LLM habit), it gets parsed back into a real array. If the AI emits `workflow_id` instead of `id`, the parser accepts both. If the LLM forgets the ` ```json ` fence, the parser finds the first `{...}` block.
 
 ## What's not in the runner
 
@@ -77,22 +77,20 @@ Intentional non-goals — these stay in the hosted product or never come to the 
 
 ## `.wfp` format
 
-The runner reads any `.wfp` file. New files saved by the runner are stamped `format_version: 1` (no backward-compat baggage — there's only one version going forward in OSS land). Older V2/V3 files from the hosted product load fine; resaving rewrites the `format_version`.
+The runner targets the **.wfp 1.0.0 simplified format**. Files declare `metadata.format_version: "1.0.0"`. The canonical spec lives at [`../wfp_format/README.md`](../wfp_format/README.md); the TypeScript types are imported from the [`wfp-format`](../wfp_format) package — no parallel definitions in this repo.
 
-Save preserves everything in the file. Sessions, todos, dashboard state, tool data — all round-trip through, even though the runner doesn't use them. Bookkeepers keep their full history; nothing is silently dropped.
+**Round-trip preservation.** Save preserves every top-level key the runner doesn't actively manage. Sessions, extensions (todos, audit, dashboard, vendor extensions), and any unknown fields all round-trip through unchanged — the runner is a visitor, not an owner of those sections. Only an explicit user action (e.g. editing tools, modifying workflows) writes to the four keys the runner does manage: `workflows`, `tools`, `data`, `knowledge`.
 
 ## API surface available to custom tool code
 
 The full reference is in [`src/apiReference.ts`](./src/apiReference.ts) and is the same text bundled into the Modify prompts. Summary:
 
 - `api.getParameter(name)` / `api.getParameterMeta(name)` / `api.setParameter(name, value)`
-- `await api.setUserData(name, value)` — persists into the workspace
+- `await api.setData(name, value)` — persists into the workspace's `data` map
 - `api.addMessage({ markdown? | html? })`
 - `await api.fetch(url, options?)` → `{ status, headers, data, text }`
 - `api.getKnowledge(name)` → string | null
 - `await api.llm.complete({ messages, max_tokens?, response_format? })` → `{ text, model, usage }`
-- `await api.llm.classify({ data, categories, field?, context?, knowledge? })` → `{ data, summary }`
-- `await api.llm.summarize({ data, focus?, context?, knowledge? })` → `{ summary }`
 
 ## Security model
 
@@ -112,7 +110,7 @@ src/
   api.ts             `api.*` surface exposed to tool code, plus CSV parser and envelope helpers
   llm.ts             OpenAI-compat chat completions fetch
   storage.ts         File System Access (open/save .wfp) + localStorage (LLM settings)
-  types.ts           .wfp V1 types
+  types.ts           Re-exports from wfp-format + local runtime types (envelopes, messages, LLM config)
   apiReference.ts    Static markdown reference bundled into Modify prompts
 
 build.ts             Bun build script → dist/wfp-runner.js (IIFE, single bundle)

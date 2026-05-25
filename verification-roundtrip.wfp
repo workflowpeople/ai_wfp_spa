@@ -1,0 +1,78 @@
+{
+  "metadata": {
+    "format_version": "1.0.0",
+    "workspace": "Round-trip Test",
+    "spec_url": "https://github.com/workflowpeople/wfp-format/blob/main/README.md"
+  },
+  "workflows": [
+    {
+      "id": "wf-hello",
+      "name": "Hello",
+      "nodes": [
+        {
+          "id": "s",
+          "type": "start",
+          "label": "Start",
+          "step_order": 1,
+          "tool_id": "workflow_start"
+        },
+        {
+          "id": "l",
+          "type": "tool",
+          "label": "Greet",
+          "step_order": 2,
+          "tool_id": "llm_step",
+          "tool_parameters": {
+            "prompt": "Say hi in one sentence."
+          }
+        },
+        {
+          "id": "e",
+          "type": "end",
+          "label": "Done",
+          "step_order": 3,
+          "tool_id": "workflow_end"
+        }
+      ]
+    }
+  ],
+  "tools": [],
+  "knowledge": [],
+  "data": {},
+  "sessions": [
+    {
+      "id": "sess-prior-run",
+      "workflow_id": "wf-hello",
+      "status": "completed",
+      "created_at": "2026-05-21T10:00:00.000Z",
+      "updated_at": "2026-05-21T10:00:05.000Z",
+      "completed_at": "2026-05-21T10:00:05.000Z",
+      "messages": [
+        {
+          "id": "m1",
+          "role": "assistant",
+          "timestamp": "2026-05-21T10:00:05.000Z",
+          "markdown": "Hi from a previous run."
+        }
+      ]
+    }
+  ],
+  "extensions": {
+    "acme_secret_sauce": {
+      "anything": [
+        "literal",
+        "structure"
+      ],
+      "nested": {
+        "deep": 42
+      }
+    },
+    "todos": [
+      {
+        "id": "t1",
+        "label": "Buy milk",
+        "status": "pending"
+      }
+    ]
+  }
+}

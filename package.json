@@ -8,6 +8,13 @@
     "dev": "bun run build.ts --watch",
     "serve": "bun run serve.ts"
   },
+  "dependencies": {
+    "wfp-format": "file:../wfp_format",
+    "wfp-api": "file:../wfp_api",
+    "wfp-builtins": "file:../wfp_builtins",
+    "wfp-core": "file:../wfp_core",
+    "wfp-llm-context": "file:../wfp_llm_context"
+  },
   "devDependencies": {
     "@types/bun": "latest",
     "typescript": "^5.4.0"
